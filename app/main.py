@@ -80,6 +80,23 @@ def _auto_code(c, parent):
         n += 1
     return f'{base}.{prefix}{n}'
 
+@app.get('/api/folders/codes')
+def api_folder_codes():
+    """Danh sách mã chuyên đề (để dán cho Claude khi chuẩn hoá đề, điền bảng PHÂN LOẠI)."""
+    fs = [f for f in db.all_folders() if f['kind'] == 'cd']
+    kids = {}
+    for f in fs:
+        kids.setdefault(f['parent_id'], []).append(f)
+    lines = ['# DANH SÁCH MÃ CHUYÊN ĐỀ — Kho Đề Toán', '# Dùng cột "Mã chuyên đề" trong bảng PHÂN LOẠI. Mức: M1 Nhận biết, M2 Thông hiểu, M3 Vận dụng, M4 Vận dụng cao.', '']
+    def walk(pid, depth):
+        for f in kids.get(pid, []):
+            lines.append('  ' * depth + (f'{f["code"]}  ' if f['code'] else '') + f['name'])
+            walk(f['id'], depth + 1)
+    walk(None, 0)
+    data = '\n'.join(lines) + '\n'
+    return Response(data.encode('utf-8'), media_type='text/plain; charset=utf-8',
+                    headers={'Content-Disposition': 'attachment; filename="Ma_chuyen_de.txt"'})
+
 @app.post('/api/folders')
 def api_folder_create(body: dict = Body(...)):
     c = db.conn()
@@ -432,6 +449,10 @@ async def api_import_preview(files: list[UploadFile] = File(...)):
                        'warnings': q['warnings'], 'duplicate': dup, 'parts': docx_io.question_parts(q, with_solution=True)})
         title = re.sub(r'\.docx$', '', name, flags=re.I).replace('_', ' ').strip()
         warns = list(res.warnings)
+        if res.classified is not None:
+            nf = sum(1 for q in res.questions if q.get('folder_id'))
+            warns.insert(0, f'Đã đọc bảng PHÂN LOẠI: {res.classified}/{len(res.questions)} câu có mã chuyên đề và mức độ'
+                         + (f', {nf} câu đã khớp thư mục.' if nf == res.classified else f'; {res.classified - nf} mã chưa có trong cây thư mục.'))
         if n_mt:
             warns.insert(0, f'Đã tự đổi {n_mt} công thức MathType sang Equation.' +
                          (f' {mt_failed} công thức không đổi được, vẫn giữ dạng MathType.' if mt_failed else ''))

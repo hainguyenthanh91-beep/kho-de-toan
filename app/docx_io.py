@@ -60,6 +60,7 @@ class ImportResult:
         self.questions = []   # list[dict]
         self.media = {}       # hash -> (bytes, ext)
         self.warnings = []    # cảnh báo chung của file
+        self.classified = None
 
 def _run_text(r):
     return ''.join(t.text or '' for t in r.findall('w:t', NS))
@@ -240,6 +241,42 @@ def _norm(s):
 
 PART_RE = re.compile(r'^\s*PHẦN\s+(IV|III|II|I|[1-4])\b\s*[.:\-–]?\s*(.*)$', re.I | re.S)
 ANS_SEC_RE = re.compile(r'^\s*(BẢNG\s+)?ĐÁP\s+ÁN\b', re.I)
+CLS_SEC_RE = re.compile(r'^\s*(BẢNG\s+)?PHÂN\s+LOẠI\b', re.I)
+ROMAN_N = {'I': 1, 'II': 2, 'III': 3, 'IV': 4, '1': 1, '2': 2, '3': 3, '4': 4}
+LEVEL_WORDS = {'1': 'M1', 'M1': 'M1', 'NB': 'M1', 'NHAN BIET': 'M1', '2': 'M2', 'M2': 'M2', 'TH': 'M2', 'THONG HIEU': 'M2',
+               '3': 'M3', 'M3': 'M3', 'VD': 'M3', 'VAN DUNG': 'M3', '4': 'M4', 'M4': 'M4', 'VDC': 'M4', 'VAN DUNG CAO': 'M4'}
+
+def _part_no(s):
+    s = (s or '').strip().upper().rstrip('.')
+    s = re.sub(r'^PH[ẦA]N\s+', '', s)
+    return ROMAN_N.get(s, 0)
+
+def _parse_cls_table(rows):
+    """Bảng PHÂN LOẠI: cột Phần | Câu | Chuyên đề (mã) | Mức. Trả về list (phần, câu, mã, mức)."""
+    if not rows:
+        return []
+    head = [_norm(c) for c in rows[0]]
+    def col(*keys):
+        for i, h in enumerate(head):
+            if any(k in h for k in keys):
+                return i
+        return None
+    ip, ic, im, il = col('phan'), col('cau'), col('ma', 'chuyen de', 'muc luc'), col('muc do', 'muc', 'do kho')
+    if il == im:  # 'muc luc' vs 'muc'
+        il = next((i for i, h in enumerate(head) if h.startswith('muc') and i != im), il)
+    out = []
+    if ic is None:
+        return out
+    for r in rows[1:]:
+        get = lambda i: r[i].strip() if i is not None and i < len(r) else ''
+        m = re.search(r'\d+', get(ic))
+        if not m:
+            continue
+        code = get(im).split()[0] if get(im) else ''
+        lv = LEVEL_WORDS.get(_norm(get(il)).upper().strip(), '')
+        out.append((_part_no(get(ip)), int(m.group()), code, lv))
+    return out
+
 SOL_SEC_RE = re.compile(r'^\s*(LỜI\s+GIẢI|HƯỚNG\s+DẪN\s+(GIẢI|CHẤM)|ĐÁP\s+ÁN\s+(VÀ|&)\s+(LỜI\s+GIẢI|HƯỚNG\s+DẪN))', re.I)
 CHON_ANS_RE = re.compile(r'(?:Chọn|Đáp án)\s*(?:đáp án|phương án)?\s*[:.]?\s*([A-D])\b')
 DS_SOL_RE = re.compile(r'^\s*([a-d])\).*?\b(Đúng|Sai)\s*[.!]?\s*$', re.S)
@@ -339,7 +376,7 @@ def parse_docx(data: bytes, source_name=''):
     for bi, b in enumerate(blocks):
         t = text_of(b) if ln(b) == 'p' else ''
         if ln(b) == 'p':
-            if raw and not LOIGIAI_RE.match(t) and (_is_heading(t, ANS_SEC_RE) or _is_heading(t, SOL_SEC_RE)):
+            if raw and not LOIGIAI_RE.match(t) and (_is_heading(t, ANS_SEC_RE) or _is_heading(t, SOL_SEC_RE) or _is_heading(t, CLS_SEC_RE)):
                 section_start = bi
                 break
             lm = LABEL_RE.match(t)
@@ -348,7 +385,7 @@ def parse_docx(data: bytes, source_name=''):
                 continue
             pm = PART_RE.match(t)
             if pm:
-                part_idx += 1
+                part_idx = ROMAN_N.get(pm.group(1).upper(), part_idx + 1)
                 ptype = part_type(pm.group(2))
                 cur = None
                 continue
@@ -370,10 +407,13 @@ def parse_docx(data: bytes, source_name=''):
     # ---- 2. bảng đáp án và lời giải ở cuối file
     keys, sols = {}, {}
     sec, kpart, spart, scur = None, 0, 0, None
-    key_seq = []
+    key_seq, cls_rows = [], []
     for b in blocks[section_start:]:
         t = text_of(b) if ln(b) == 'p' else ''
         if ln(b) == 'p':
+            if _is_heading(t, CLS_SEC_RE):
+                sec = 'cls'
+                continue
             if _is_heading(t, SOL_SEC_RE) and not LOIGIAI_RE.match(t) or (sec != 'sol' and LOIGIAI_RE.match(t)):
                 sec, spart, scur = 'sol', 0, None
                 continue
@@ -382,10 +422,11 @@ def parse_docx(data: bytes, source_name=''):
                 continue
             pm = PART_RE.match(t)
             if pm and len(t) < 120:
+                pn = ROMAN_N.get(pm.group(1).upper(), 0)
                 if sec == 'key':
-                    kpart += 1
+                    kpart = pn or kpart + 1
                 else:
-                    spart += 1; scur = None
+                    spart = pn or spart + 1; scur = None
                 continue
             if SKIP_RE.match(t):
                 continue
@@ -396,6 +437,9 @@ def parse_docx(data: bytes, source_name=''):
             elif t.strip():
                 for n, v in re.findall(r'\b(\d{1,3})\s*[.:\-–)]?\s*([A-D])\b', t):
                     key_seq.append((kpart, int(n), v, 'TN'))
+        elif sec == 'cls':
+            if ln(b) == 'tbl':
+                cls_rows += _parse_cls_table(_cells(b))
         elif sec == 'sol':
             m = CAU_RE.match(t) if ln(b) == 'p' else None
             if m:
@@ -430,6 +474,15 @@ def parse_docx(data: bytes, source_name=''):
             rq['sol'] = bl
             rq['sol_from_section'] = True
 
+    has_cls_parts = any(p for p, *_ in cls_rows)
+    n_cls = 0
+    for p, n, code, lv in cls_rows:
+        rq = q_by_part.get((p, n)) if has_cls_parts else next((r for r in raw if r['num'] == n), None)
+        if rq is not None:
+            rq['cls'] = (code, lv)
+            n_cls += 1
+    if cls_rows:
+        res.classified = n_cls
     if not raw:
         res.warnings.append('Không tìm thấy câu nào bắt đầu bằng “Câu …”.')
     for i, rq in enumerate(raw, 1):
@@ -451,6 +504,9 @@ def _build_question(rq, idx, rels, z, res):
     lab = rq['label']
     code = (lab.group(1) or '').strip() if lab else ''
     level = (lab.group(2) or '') if lab else ''
+    if rq.get('cls'):
+        code = code or rq['cls'][0]
+        level = level or rq['cls'][1]
     qtype = (lab.group(3) or '') if lab else ''
     if qtype == 'DS':
         qtype = 'ĐS'

@@ -554,7 +554,7 @@ function renderImport() {
   IMP.files.forEach(f => {
     h += `<div class="imp-file">${esc(f.file)}${IMP.asExam && !f.error ? ` <input class="title" data-file="${esc(f.file)}" value="${esc(IMP.titles[f.file])}" aria-label="Tên đề">` : ''}</div>`;
     if (f.error) { h += `<div class="imp-q"><div class="err">${esc(f.error)}</div></div>`; return; }
-    (f.warnings || []).forEach(w => { h += `<div class="imp-q"><div class="${w.startsWith('Đã tự đổi') ? 'okmsg' : 'err'}">${esc(w)}</div></div>`; });
+    (f.warnings || []).forEach(w => { h += `<div class="imp-q"><div class="${(w.startsWith('Đã tự đổi') || w.startsWith('Đã đọc bảng')) && !w.includes('chưa có trong cây') ? 'okmsg' : 'err'}">${esc(w)}</div></div>`; });
     f.questions.forEach(q => {
       const view = {qtype: q.qtype, answer: impVal(q, 'answer'), parts: q.parts};
       const lv = impVal(q, 'level'), fid = impVal(q, 'folder_id');
@@ -752,6 +752,7 @@ function setupSettings() {
     $('#settings-dlg').showModal();
   };
   $('#s-backup').onclick = e => { e.preventDefault(); download('/api/backup', null, 'SaoLuu_KhoDeToan.db').then(r => r && !DESK() && toast('Đã tải bản sao lưu')).catch(err => toast(err.message)); };
+  $('#s-codes').onclick = e => { e.preventDefault(); download('/api/folders/codes', null, 'Ma_chuyen_de.txt').catch(err => toast(err.message)); };
   $('#s-opendir').onclick = async e => { e.preventDefault(); window.pywebview.api.open_path(await window.pywebview.api.data_dir()); };
   $$('a[href="/mau-nhap-cau-hoi.docx"]').forEach(a => a.onclick = e => { e.preventDefault(); e.stopPropagation(); download('/mau-nhap-cau-hoi.docx', null, 'Mau_nhap_cau_hoi.docx').catch(err => toast(err.message)); });
   $('#s-save').onclick = async () => { await post('/api/settings', {center: $('#s-center').value}, 'PUT'); toast('Đã lưu cài đặt'); };
