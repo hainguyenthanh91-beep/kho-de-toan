@@ -129,7 +129,11 @@
       <div class="drop-title">Kéo thả file Word (.docx) vào đây</div>
       <div class="muted">hoặc <button class="linkbtn" id="pick">chọn file</button> — chọn được nhiều file một lúc</div>
       <div class="muted small drop-note">Đọc được cả hai kiểu: <b>đáp án và lời giải ngay dưới từng câu</b>, hoặc <b>bảng đáp án + lời giải chi tiết ở cuối đề</b>.
-        Đáp án đúng có thể gạch chân, tô đỏ, nằm trong bảng đáp án, hoặc câu “Chọn …” trong lời giải. <a href="/mau-nhap-cau-hoi.docx">Tải file mẫu</a></div>
+        Đáp án đúng có thể gạch chân, tô đỏ, nằm trong bảng đáp án, hoặc câu “Chọn …” trong lời giải. Công thức MathType được tự đổi sang Equation. <a href="/mau-nhap-cau-hoi.docx">Tải file mẫu</a></div>
+    </div>
+    <div class="mt-tool">
+      <div><b>Đổi MathType → Equation</b><div class="muted small">Khi nhập vào kho, công thức MathType được tự đổi. Muốn chỉ lấy file Word đã đổi (không nhập kho) thì dùng nút này.</div><div id="mt-status" class="small"></div></div>
+      <input type="file" id="mt-input" accept=".docx" multiple hidden><button class="btn" id="mt-pick">Chọn file cần đổi…</button>
     </div>
     <div id="import-result"></div>
   </div>

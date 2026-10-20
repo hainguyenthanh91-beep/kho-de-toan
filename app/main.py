@@ -8,7 +8,7 @@ from fastapi import Body, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import db, docx_io
+from . import db, docx_io, mathtype_convert
 
 APP_DIR = Path(__file__).resolve().parent
 STATIC = APP_DIR / 'static'
@@ -404,7 +404,12 @@ async def api_import_preview(files: list[UploadFile] = File(...)):
         if not name.lower().endswith('.docx'):
             out.append({'file': name, 'error': 'Chỉ nhận file .docx (file .doc cũ hãy mở bằng Word rồi Lưu thành .docx; PDF hãy chuyển sang Word trước)'})
             continue
+        n_mt = 0
         try:
+            if mathtype_convert.count_mathtype(data):
+                data, st = mathtype_convert.convert_docx(data)
+                n_mt = st['converted']
+                mt_failed = st['failed']
             res = docx_io.parse_docx(data, name)
         except Exception as e:
             out.append({'file': name, 'error': f'Không đọc được file: {e}'})
@@ -426,7 +431,11 @@ async def api_import_preview(files: list[UploadFile] = File(...)):
                        'folder_id': q['folder_id'], 'level': q['level'], 'qtype': q['qtype'], 'answer': q['answer'],
                        'warnings': q['warnings'], 'duplicate': dup, 'parts': docx_io.question_parts(q, with_solution=True)})
         title = re.sub(r'\.docx$', '', name, flags=re.I).replace('_', ' ').strip()
-        out.append({'file': name, 'title': title, 'warnings': res.warnings, 'questions': qs})
+        warns = list(res.warnings)
+        if n_mt:
+            warns.insert(0, f'Đã tự đổi {n_mt} công thức MathType sang Equation.' +
+                         (f' {mt_failed} công thức không đổi được, vẫn giữ dạng MathType.' if mt_failed else ''))
+        out.append({'file': name, 'title': title, 'warnings': warns, 'info': bool(n_mt), 'questions': qs})
     PENDING[token] = {'time': time.time(), 'questions': store, 'media': media}
     return {'token': token, 'files': out}
 
@@ -584,6 +593,20 @@ def api_put_settings(body: dict = Body(...)):
     if 'center' in body:
         db.set_setting('center', body['center'])
     return {'ok': True}
+
+@app.post('/api/tools/mathtype')
+async def api_tool_mathtype(file: UploadFile = File(...)):
+    """Chỉ đổi MathType → Equation, trả lại file Word (không nhập vào kho)."""
+    data = await file.read()
+    try:
+        out, st = mathtype_convert.convert_docx(data)
+    except Exception as e:
+        raise HTTPException(400, f'Không đọc được file: {e}')
+    stem = re.sub(r'\.docx$', '', file.filename or 'file', flags=re.I)
+    from urllib.parse import quote
+    return Response(out, media_type=DOCX_MIME, headers={
+        'Content-Disposition': f'attachment; filename="{safe_name(stem)}_Equation.docx"; filename*=UTF-8\'\'{quote(stem + " (Equation).docx")}',
+        'X-Converted': str(st['converted']), 'X-Failed': str(st['failed'])})
 
 @app.get('/api/backup')
 def api_backup():

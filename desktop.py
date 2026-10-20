@@ -92,6 +92,23 @@ class Api:
         self.last_dir = str(Path(dest).parent)
         return {'ok': True, 'path': dest}
 
+    def save_bytes(self, b64, name):
+        """Lưu dữ liệu trang web đã có sẵn (base64) qua hộp thoại Windows."""
+        import base64
+        blob = base64.b64decode(b64)
+        ext = Path(name).suffix.lstrip('.').lower() or 'bin'
+        last = getattr(self, 'last_dir', str(Path.home() / 'Documents'))
+        res = self.window.create_file_dialog(webview.SAVE_DIALOG, directory=last, save_filename=name,
+                                             file_types=('Tài liệu Word (*.docx)' if ext == 'docx' else f'Tệp (*.{ext})', 'Tất cả (*.*)'))
+        if not res:
+            return {'ok': False, 'cancel': True}
+        dest = res if isinstance(res, str) else res[0]
+        if not Path(dest).suffix:
+            dest += '.' + ext
+        Path(dest).write_bytes(blob)
+        self.last_dir = str(Path(dest).parent)
+        return {'ok': True, 'path': dest}
+
     def open_path(self, p):
         """Mở file (Word) hoặc thư mục bằng chương trình mặc định của Windows."""
         try:

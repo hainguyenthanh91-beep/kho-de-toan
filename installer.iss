@@ -1,7 +1,7 @@
 ﻿; Bộ cài Kho Đề Toán (Inno Setup 6)
 #define AppVer GetEnv("APP_VERSION")
 #if AppVer == ""
-  #define AppVer "1.4"
+  #define AppVer "1.5"
 #endif
 
 [Setup]

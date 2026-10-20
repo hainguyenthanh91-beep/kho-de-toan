@@ -487,7 +487,28 @@ async function updateCart() {
 
 /* ================= nhập liệu ================= */
 let IMP = null;
+async function convertMathType(file) {
+  const fd = new FormData(); fd.append('file', file);
+  const st = $('#mt-status'); st.textContent = `Đang đổi ${file.name}…`;
+  let r;
+  try { r = await fetch('/api/tools/mathtype', {method: 'POST', body: fd}); } catch (_) { st.textContent = OFFLINE; return; }
+  if (!r.ok) { const j = await r.json().catch(() => ({})); st.innerHTML = `<span class="err">${esc(j.detail || r.statusText)}</span>`; return; }
+  const n = r.headers.get('X-Converted'), bad = +r.headers.get('X-Failed');
+  const blob = await r.blob();
+  const name = file.name.replace(/\.docx$/i, '') + ' (Equation).docx';
+  if (DESK()) {
+    const b64 = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result.split(',')[1]); fr.readAsDataURL(blob); });
+    const s = await window.pywebview.api.save_bytes(b64, name);
+    if (s.ok) savedToast(s.path);
+  } else {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  st.innerHTML = `<b>${esc(file.name)}</b>: đã đổi ${n} công thức${bad ? `, ${bad} công thức không đổi được (giữ MathType)` : ''}.`;
+}
 function setupImport() {
+  $('#mt-pick').onclick = () => $('#mt-input').click();
+  $('#mt-input').onchange = async e => { for (const f of e.target.files) await convertMathType(f); e.target.value = ''; };
   const drop = $('#drop'), inp = $('#file-input');
   drop.onclick = e => { if (e.target.tagName !== 'A') inp.click(); };
   $('#pick').onclick = e => { e.stopPropagation(); inp.click(); };
@@ -533,7 +554,7 @@ function renderImport() {
   IMP.files.forEach(f => {
     h += `<div class="imp-file">${esc(f.file)}${IMP.asExam && !f.error ? ` <input class="title" data-file="${esc(f.file)}" value="${esc(IMP.titles[f.file])}" aria-label="Tên đề">` : ''}</div>`;
     if (f.error) { h += `<div class="imp-q"><div class="err">${esc(f.error)}</div></div>`; return; }
-    (f.warnings || []).forEach(w => { h += `<div class="imp-q"><div class="err">${esc(w)}</div></div>`; });
+    (f.warnings || []).forEach(w => { h += `<div class="imp-q"><div class="${w.startsWith('Đã tự đổi') ? 'okmsg' : 'err'}">${esc(w)}</div></div>`; });
     f.questions.forEach(q => {
       const view = {qtype: q.qtype, answer: impVal(q, 'answer'), parts: q.parts};
       const lv = impVal(q, 'level'), fid = impVal(q, 'folder_id');
