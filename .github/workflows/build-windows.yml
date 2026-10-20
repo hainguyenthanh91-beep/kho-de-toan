@@ -5,6 +5,9 @@ on:
     branches: ['**']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -37,3 +40,10 @@ jobs:
         with:
           name: KhoDeToan-Windows
           path: Output/*
+      - name: Phat hanh (Release)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.APP_VERSION }}-build${{ github.run_number }}
+          name: Kho Đề Toán ${{ env.APP_VERSION }} (bản ${{ github.run_number }})
+          files: Output/*
+          make_latest: true
