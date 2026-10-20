@@ -1,0 +1,39 @@
+name: Build Kho De Toan (Windows)
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      APP_VERSION: '1.4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cai thu vien
+        run: python -m pip install -r requirements.txt pywebview pyinstaller
+      - name: Dong goi ung dung
+        run: >
+          pyinstaller desktop.py --name KhoDeToan --windowed --onedir --noconfirm
+          --icon icon.ico
+          --add-data "app/static;app/static"
+          --add-data "app/cay_mac_dinh.json;app"
+          --collect-submodules uvicorn
+          --collect-all webview
+      - name: Cai Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Tao bo cai
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+        shell: pwsh
+      - name: Ban mang di (zip)
+        run: Compress-Archive -Path dist\KhoDeToan\* -DestinationPath Output\KhoDeToan_portable.zip
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KhoDeToan-Windows
+          path: Output/*

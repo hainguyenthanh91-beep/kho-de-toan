@@ -1,0 +1,7 @@
+du_lieu/
+__pycache__/
+.venv/
+dist/
+build/
+Output/
+*.spec

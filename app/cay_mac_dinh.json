@@ -1,0 +1,59 @@
+{
+  "_ghi_chu": "Cây dựng sẵn khi chạy lần đầu. Sau đó cây được sửa trực tiếp trong phần mềm; file này không còn được dùng.",
+  "chuyen_de": [
+    {"ten": "Toán 6", "ma": "6", "con": [
+      {"ten": "Chương I. Tập hợp các số tự nhiên", "ma": "C1", "con": ["Bài 1. Tập hợp", "Bài 2. Cách ghi số tự nhiên", "Bài 3. Thứ tự trong tập hợp các số tự nhiên", "Bài 4. Phép cộng và phép trừ số tự nhiên", "Bài 5. Phép nhân và phép chia số tự nhiên", "Bài 6. Lũy thừa với số mũ tự nhiên", "Bài 7. Thứ tự thực hiện các phép tính"]},
+      {"ten": "Chương II. Tính chia hết trong tập hợp các số tự nhiên", "ma": "C2", "con": ["Bài 8. Quan hệ chia hết và tính chất", "Bài 9. Dấu hiệu chia hết", "Bài 10. Số nguyên tố", "Bài 11. Ước chung. Ước chung lớn nhất", "Bài 12. Bội chung. Bội chung nhỏ nhất"]},
+      {"ten": "Chương III. Số nguyên", "ma": "C3", "con": ["Bài 13. Tập hợp các số nguyên", "Bài 14. Phép cộng và phép trừ số nguyên", "Bài 15. Quy tắc dấu ngoặc", "Bài 16. Phép nhân số nguyên", "Bài 17. Phép chia hết. Ước và bội của một số nguyên"]},
+      {"ten": "Chương IV. Một số hình phẳng trong thực tiễn", "ma": "C4", "con": ["Bài 18. Hình tam giác đều. Hình vuông. Hình lục giác đều", "Bài 19. Hình chữ nhật. Hình thoi. Hình bình hành. Hình thang cân", "Bài 20. Chu vi và diện tích của một số tứ giác đã học"]},
+      {"ten": "Chương V. Tính đối xứng của hình phẳng trong tự nhiên", "ma": "C5", "con": ["Bài 21. Hình có trục đối xứng", "Bài 22. Hình có tâm đối xứng"]},
+      {"ten": "Chương VI. Phân số", "ma": "C6", "con": ["Bài 23. Mở rộng phân số. Phân số bằng nhau", "Bài 24. So sánh phân số. Hỗn số dương", "Bài 25. Phép cộng và phép trừ phân số", "Bài 26. Phép nhân và phép chia phân số", "Bài 27. Hai bài toán về phân số"]},
+      {"ten": "Chương VII. Số thập phân", "ma": "C7", "con": ["Bài 28. Số thập phân", "Bài 29. Tính toán với số thập phân", "Bài 30. Làm tròn và ước lượng", "Bài 31. Một số bài toán về tỉ số và tỉ số phần trăm"]},
+      {"ten": "Chương VIII. Những hình hình học cơ bản", "ma": "C8", "con": ["Bài 32. Điểm và đường thẳng", "Bài 33. Điểm nằm giữa hai điểm. Tia", "Bài 34. Đoạn thẳng. Độ dài đoạn thẳng", "Bài 35. Trung điểm của đoạn thẳng", "Bài 36. Góc", "Bài 37. Số đo góc"]},
+      {"ten": "Chương IX. Dữ liệu và xác suất thực nghiệm", "ma": "C9", "con": ["Bài 38. Dữ liệu và thu thập dữ liệu", "Bài 39. Bảng thống kê và biểu đồ tranh", "Bài 40. Biểu đồ cột", "Bài 41. Biểu đồ cột kép", "Bài 42. Kết quả có thể và sự kiện trong trò chơi, thí nghiệm", "Bài 43. Xác suất thực nghiệm"]}
+    ]},
+    {"ten": "Toán 7", "ma": "7", "con": [
+      {"ten": "Chương I. Số hữu tỉ", "ma": "C1", "con": ["Bài 1. Tập hợp các số hữu tỉ", "Bài 2. Cộng, trừ, nhân, chia số hữu tỉ", "Bài 3. Lũy thừa với số mũ tự nhiên của một số hữu tỉ", "Bài 4. Thứ tự thực hiện các phép tính. Quy tắc chuyển vế"]},
+      {"ten": "Chương II. Số thực", "ma": "C2", "con": ["Bài 5. Làm quen với số thập phân vô hạn tuần hoàn", "Bài 6. Số vô tỉ. Căn bậc hai số học", "Bài 7. Tập hợp các số thực"]},
+      {"ten": "Chương III. Góc và đường thẳng song song", "ma": "C3", "con": ["Bài 8. Góc ở vị trí đặc biệt. Tia phân giác của một góc", "Bài 9. Hai đường thẳng song song và dấu hiệu nhận biết", "Bài 10. Tiên đề Euclid. Tính chất của hai đường thẳng song song", "Bài 11. Định lí và chứng minh định lí"]},
+      {"ten": "Chương IV. Tam giác bằng nhau", "ma": "C4", "con": ["Bài 12. Tổng các góc trong một tam giác", "Bài 13. Hai tam giác bằng nhau. Trường hợp bằng nhau thứ nhất của tam giác", "Bài 14. Trường hợp bằng nhau thứ hai và thứ ba của tam giác", "Bài 15. Các trường hợp bằng nhau của tam giác vuông", "Bài 16. Tam giác cân. Đường trung trực của đoạn thẳng"]},
+      {"ten": "Chương V. Thu thập và biểu diễn dữ liệu", "ma": "C5", "con": ["Bài 17. Thu thập và phân loại dữ liệu", "Bài 18. Biểu đồ hình quạt tròn", "Bài 19. Biểu đồ đoạn thẳng"]},
+      {"ten": "Chương VI. Tỉ lệ thức và đại lượng tỉ lệ", "ma": "C6", "con": ["Bài 20. Tỉ lệ thức", "Bài 21. Tính chất của dãy tỉ số bằng nhau", "Bài 22. Đại lượng tỉ lệ thuận", "Bài 23. Đại lượng tỉ lệ nghịch"]},
+      {"ten": "Chương VII. Biểu thức đại số và đa thức một biến", "ma": "C7", "con": ["Bài 24. Biểu thức đại số", "Bài 25. Đa thức một biến", "Bài 26. Phép cộng và phép trừ đa thức một biến", "Bài 27. Phép nhân đa thức một biến", "Bài 28. Phép chia đa thức một biến"]},
+      {"ten": "Chương VIII. Làm quen với biến cố và xác suất của biến cố", "ma": "C8", "con": ["Bài 29. Làm quen với biến cố", "Bài 30. Làm quen với xác suất của biến cố"]},
+      {"ten": "Chương IX. Quan hệ giữa các yếu tố trong một tam giác", "ma": "C9", "con": ["Bài 31. Quan hệ giữa góc và cạnh đối diện trong một tam giác", "Bài 32. Quan hệ giữa đường vuông góc và đường xiên", "Bài 33. Quan hệ giữa ba cạnh của một tam giác", "Bài 34. Sự đồng quy của ba đường trung tuyến, ba đường phân giác trong một tam giác", "Bài 35. Sự đồng quy của ba đường trung trực, ba đường cao trong một tam giác"]},
+      {"ten": "Chương X. Một số hình khối trong thực tiễn", "ma": "C10", "con": ["Bài 36. Hình hộp chữ nhật và hình lập phương", "Bài 37. Hình lăng trụ đứng tam giác và hình lăng trụ đứng tứ giác"]}
+    ]},
+    {"ten": "Toán 8", "ma": "8", "con": [
+      {"ten": "Chương I. Đa thức", "ma": "C1", "con": ["Bài 1. Đơn thức", "Bài 2. Đa thức", "Bài 3. Phép cộng và phép trừ đa thức", "Bài 4. Phép nhân đa thức", "Bài 5. Phép chia đa thức cho đơn thức"]},
+      {"ten": "Chương II. Hằng đẳng thức đáng nhớ và ứng dụng", "ma": "C2", "con": ["Bài 6. Hiệu hai bình phương. Bình phương của một tổng hay một hiệu", "Bài 7. Lập phương của một tổng. Lập phương của một hiệu", "Bài 8. Tổng và hiệu hai lập phương", "Bài 9. Phân tích đa thức thành nhân tử"]},
+      {"ten": "Chương III. Tứ giác", "ma": "C3", "con": ["Bài 10. Tứ giác", "Bài 11. Hình thang cân", "Bài 12. Hình bình hành", "Bài 13. Hình chữ nhật", "Bài 14. Hình thoi và hình vuông"]},
+      {"ten": "Chương IV. Định lí Thalès", "ma": "C4", "con": ["Bài 15. Định lí Thalès trong tam giác", "Bài 16. Đường trung bình của tam giác", "Bài 17. Tính chất đường phân giác của tam giác"]},
+      {"ten": "Chương V. Dữ liệu và biểu đồ", "ma": "C5", "con": ["Bài 18. Thu thập và phân loại dữ liệu", "Bài 19. Biểu diễn dữ liệu bằng bảng, biểu đồ", "Bài 20. Phân tích số liệu thống kê dựa vào biểu đồ"]},
+      {"ten": "Chương VI. Phân thức đại số", "ma": "C6", "con": ["Bài 21. Phân thức đại số", "Bài 22. Tính chất cơ bản của phân thức đại số", "Bài 23. Phép cộng và phép trừ phân thức đại số", "Bài 24. Phép nhân và phép chia phân thức đại số"]},
+      {"ten": "Chương VII. Phương trình bậc nhất và hàm số bậc nhất", "ma": "C7", "con": ["Bài 25. Phương trình bậc nhất một ẩn", "Bài 26. Giải bài toán bằng cách lập phương trình", "Bài 27. Khái niệm hàm số và đồ thị của hàm số", "Bài 28. Hàm số bậc nhất và đồ thị của hàm số bậc nhất", "Bài 29. Hệ số góc của đường thẳng"]},
+      {"ten": "Chương VIII. Mở đầu về tính xác suất của biến cố", "ma": "C8", "con": ["Bài 30. Kết quả có thể và kết quả thuận lợi", "Bài 31. Cách tính xác suất của biến cố bằng tỉ số", "Bài 32. Mối liên hệ giữa xác suất thực nghiệm với xác suất và ứng dụng"]},
+      {"ten": "Chương IX. Tam giác đồng dạng", "ma": "C9", "con": ["Bài 33. Hai tam giác đồng dạng", "Bài 34. Ba trường hợp đồng dạng của hai tam giác", "Bài 35. Định lí Pythagore và ứng dụng", "Bài 36. Các trường hợp đồng dạng của hai tam giác vuông", "Bài 37. Hình đồng dạng"]},
+      {"ten": "Chương X. Một số hình khối trong thực tiễn", "ma": "C10", "con": ["Bài 38. Hình chóp tam giác đều", "Bài 39. Hình chóp tứ giác đều"]}
+    ]},
+    {"ten": "Toán 9", "ma": "9", "con": [
+      {"ten": "Chương I. Phương trình và hệ hai phương trình bậc nhất hai ẩn", "ma": "C1", "con": ["Bài 1. Khái niệm phương trình và hệ hai phương trình bậc nhất hai ẩn", "Bài 2. Giải hệ hai phương trình bậc nhất hai ẩn", "Bài 3. Giải bài toán bằng cách lập hệ phương trình"]},
+      {"ten": "Chương II. Phương trình và bất phương trình bậc nhất một ẩn", "ma": "C2", "con": ["Bài 4. Phương trình quy về phương trình bậc nhất một ẩn", "Bài 5. Bất đẳng thức và tính chất", "Bài 6. Bất phương trình bậc nhất một ẩn"]},
+      {"ten": "Chương III. Căn bậc hai và căn bậc ba", "ma": "C3", "con": ["Bài 7. Căn bậc hai và căn thức bậc hai", "Bài 8. Khai căn bậc hai với phép nhân và phép chia", "Bài 9. Biến đổi đơn giản và rút gọn biểu thức chứa căn thức bậc hai", "Bài 10. Căn bậc ba và căn thức bậc ba"]},
+      {"ten": "Chương IV. Hệ thức lượng trong tam giác vuông", "ma": "C4", "con": ["Bài 11. Tỉ số lượng giác của góc nhọn", "Bài 12. Một số hệ thức giữa cạnh, góc trong tam giác vuông và ứng dụng"]},
+      {"ten": "Chương V. Đường tròn", "ma": "C5", "con": ["Bài 13. Mở đầu về đường tròn", "Bài 14. Cung và dây của một đường tròn", "Bài 15. Độ dài của cung tròn. Diện tích hình quạt tròn và hình vành khuyên", "Bài 16. Vị trí tương đối của đường thẳng và đường tròn", "Bài 17. Vị trí tương đối của hai đường tròn"]},
+      {"ten": "Chương VI. Hàm số y = ax² (a ≠ 0). Phương trình bậc hai một ẩn", "ma": "C6", "con": ["Bài 18. Hàm số y = ax² (a ≠ 0)", "Bài 19. Phương trình bậc hai một ẩn", "Bài 20. Định lí Viète và ứng dụng", "Bài 21. Giải bài toán bằng cách lập phương trình"]},
+      {"ten": "Chương VII. Tần số và tần số tương đối", "ma": "C7", "con": ["Bài 22. Bảng tần số và biểu đồ tần số", "Bài 23. Bảng tần số tương đối và biểu đồ tần số tương đối", "Bài 24. Bảng tần số, tần số tương đối ghép nhóm và biểu đồ"]},
+      {"ten": "Chương VIII. Xác suất của biến cố trong một số mô hình xác suất đơn giản", "ma": "C8", "con": ["Bài 25. Phép thử ngẫu nhiên và không gian mẫu", "Bài 26. Xác suất của biến cố liên quan tới phép thử"]},
+      {"ten": "Chương IX. Đường tròn ngoại tiếp và đường tròn nội tiếp", "ma": "C9", "con": ["Bài 27. Góc nội tiếp", "Bài 28. Đường tròn ngoại tiếp và đường tròn nội tiếp của một tam giác", "Bài 29. Tứ giác nội tiếp", "Bài 30. Đa giác đều"]},
+      {"ten": "Chương X. Một số hình khối trong thực tiễn", "ma": "C10", "con": ["Bài 31. Hình trụ và hình nón", "Bài 32. Hình cầu"]}
+    ]}
+  ],
+  "de_thi": [
+    {"ten": "Toán 6", "con": ["Giữa học kì I", "Cuối học kì I", "Giữa học kì II", "Cuối học kì II"]},
+    {"ten": "Toán 7", "con": ["Giữa học kì I", "Cuối học kì I", "Giữa học kì II", "Cuối học kì II"]},
+    {"ten": "Toán 8", "con": ["Giữa học kì I", "Cuối học kì I", "Giữa học kì II", "Cuối học kì II"]},
+    {"ten": "Toán 9", "con": ["Giữa học kì I", "Cuối học kì I", "Giữa học kì II", "Cuối học kì II", "Thi vào lớp 10"]},
+    {"ten": "Học sinh giỏi", "con": ["Lớp 6", "Lớp 7", "Lớp 8", "Lớp 9"]}
+  ]
+}
