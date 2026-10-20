@@ -469,14 +469,34 @@ def _detect_type(rq):
         qt = 'ĐS'
     return qt or rq.get('ptype') or classify_blocks(rq['stem'])
 
-def _expand_subparts(rq):
-    """Câu tự luận có ý a), b)… → mỗi ý một câu (phần chung chép vào từng câu)."""
+GEO_RE = re.compile(r'tam giác|tứ giác|hình (thang|vuông|chữ nhật|bình hành|thoi|tròn|chóp|lăng trụ|nón|trụ|cầu)|đường tròn|'
+                    r'đường (cao|trung tuyến|phân giác|trung trực|kính)|tiếp tuyến|trung điểm|vuông góc|song song|'
+                    r'nội tiếp|ngoại tiếp|dây cung|bán kính|tia phân giác|góc\s|\\widehat|∠|△|Δ', re.I)
+DEP_RE = re.compile(r'(câu|ý|phần)\s*[a-h]\)?\b|suy ra|từ đó|kết quả (trên|ở)|với [A-Z]\b.*(ở|tại) (câu|ý)|chứng minh', re.I)
+
+def _keep_whole(rq, items, hint):
+    """Có nên giữ nguyên bài (không tách ý)? hint: 'split' | 'whole' | None (từ bảng PHÂN LOẠI)."""
+    if hint:
+        return hint == 'whole'
+    txt = ' '.join(text_of(b) for b in rq['stem']) + ' ' + ' '.join(plain_of(b) for b in rq['stem'])
+    if GEO_RE.search(txt):  # bài hình: hình chung, ý sau dùng ý trước
+        return True
+    if any(b.xpath('.//w:drawing|.//w:pict|.//w:object', namespaces=NS) for b in rq['stem']):
+        return True
+    later = ' '.join(text_of(b) for it in items[1:] for b in it)
+    return bool(DEP_RE.search(later))  # ý sau nhắc tới ý trước
+
+def _expand_subparts(rq, hint=None):
+    """Câu tự luận có ý a), b)… độc lập → mỗi ý một câu (phần chung chép vào từng câu).
+    Bài hình hoặc ý phụ thuộc nhau thì giữ nguyên cả bài."""
     if _detect_type(rq) != 'TL':
         return [rq]
     sp = _split_subparts(rq['stem'])
     if not sp:
         return [rq]
     lead, items = sp
+    if _keep_whole(rq, items, hint):
+        return [rq]
     ssp = _split_subparts(rq['sol']) if rq['sol'] else None
     gid = hashlib.sha1(('%s|%s|%s' % (rq.get('part'), rq.get('num'), ''.join(text_of(b) for b in rq['stem']))).encode()).hexdigest()[:12]
     if lead and ln(lead[0]) == 'p':  # điểm '(1,5 điểm)' là của cả bài, bỏ khi tách ý
@@ -615,10 +635,14 @@ def parse_docx(data: bytes, source_name=''):
             rq['sol'] = bl
             rq['sol_from_section'] = True
 
+    has_cls_parts = any(p for p, *_ in cls_rows)
+    hints = {}
+    for p, n, sub, code, lv in cls_rows:
+        k = (p if has_cls_parts else None, n)
+        hints[k] = 'split' if sub else hints.get(k, 'whole')
     expanded = []
     for rq in raw:
-        expanded += _expand_subparts(rq)
-    has_cls_parts = any(p for p, *_ in cls_rows)
+        expanded += _expand_subparts(rq, hints.get((rq['part'] if has_cls_parts else None, rq['num'])))
     n_cls = 0
     for p, n, sub, code, lv in cls_rows:
         hits = [r for r in expanded if r['num'] == n and (not has_cls_parts or r['part'] == p)
@@ -636,7 +660,7 @@ def parse_docx(data: bytes, source_name=''):
         res.warnings.append('Không tìm thấy câu nào bắt đầu bằng “Câu …”.')
     n_split = sum(1 for r in expanded if r.get('sub') == 'a')
     if n_split:
-        res.warnings.append(f'Đã tách {n_split} câu tự luận thành {sum(1 for r in expanded if r.get("sub"))} câu theo từng ý a), b)…')
+        res.warnings.append(f'Đã tách {n_split} câu tự luận thành {sum(1 for r in expanded if r.get("sub"))} câu theo từng ý a), b)… (bài hình và bài có ý sau dùng ý trước được giữ nguyên)')
     for i, rq in enumerate(expanded, 1):
         q = _build_question(rq, i, rels, z, res)
         if q:

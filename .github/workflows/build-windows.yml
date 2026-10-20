@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      APP_VERSION: '1.7'
+      APP_VERSION: '1.8'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
