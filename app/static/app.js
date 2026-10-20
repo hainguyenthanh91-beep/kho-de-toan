@@ -560,7 +560,7 @@ function renderImport() {
       const lv = impVal(q, 'level'), fid = impVal(q, 'folder_id');
       const warns = q.warnings.filter(w => !/^Chưa có (chuyên đề|mức độ|đáp án)/.test(w));
       h += `<div class="imp-q ${IMP.skip.has(q.idx) ? 'skip' : ''} ${IMP.focus === q.idx ? 'focus' : ''}" data-idx="${q.idx}">
-        <div><div class="qhead"><span class="tag">${q.part ? 'Phần ' + ROMAN[q.part] + ' · ' : ''}Câu ${q.num ?? q.no}</span><span class="badge">${TYPE_NAME[q.qtype]}</span></div>
+        <div><div class="qhead"><span class="tag">${q.part ? 'Phần ' + ROMAN[q.part] + ' · ' : ''}Câu ${q.num ?? q.no}${q.sub ? q.sub : ''}</span><span class="badge">${TYPE_NAME[q.qtype]}</span></div>
           ${questionView(view, true)}${warns.length ? `<div class="warns">${warns.map(w => `<span class="chip warn">${esc(w)}</span>`).join('')}</div>` : ''}</div>
         <div class="imp-side">
           <label class="check"><input type="checkbox" class="inc" ${IMP.skip.has(q.idx) ? '' : 'checked'}> Lưu câu này</label>

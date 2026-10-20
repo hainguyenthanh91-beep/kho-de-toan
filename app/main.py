@@ -444,7 +444,7 @@ async def api_import_preview(files: list[UploadFile] = File(...)):
                 q['warnings'].append(f'Mã “{q["code"]}” chưa có trong cây thư mục')
             idx = len(store)
             store.append(q)
-            qs.append({'idx': idx, 'no': q['no_in_file'], 'num': q.get('num_in_file'), 'part': q.get('part_in_file'),
+            qs.append({'idx': idx, 'no': q['no_in_file'], 'num': q.get('num_in_file'), 'sub': q.get('sub'), 'part': q.get('part_in_file'),
                        'folder_id': q['folder_id'], 'level': q['level'], 'qtype': q['qtype'], 'answer': q['answer'],
                        'warnings': q['warnings'], 'duplicate': dup, 'parts': docx_io.question_parts(q, with_solution=True)})
         title = re.sub(r'\.docx$', '', name, flags=re.I).replace('_', ' ').strip()

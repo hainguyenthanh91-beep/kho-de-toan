@@ -41,7 +41,7 @@ Nội dung lời giải …
   - `TN`: trắc nghiệm ABCD.
   - `ĐS`: đúng/sai, các ý a) b) c) d); gạch chân chữ cái của ý đúng.
   - `TLN`: trả lời ngắn; thêm dòng `Đáp án: …`.
-  - `TL`: tự luận.
+  - `TL`: tự luận. Câu có nhiều ý a), b), c)… được tách thành từng câu riêng (phần đề chung chép vào mỗi câu), mỗi ý có chuyên đề và mức độ riêng. Khi xuất lại cả đề, các ý tự gộp về một câu như cũ.
 
 ## Cây thư mục
 

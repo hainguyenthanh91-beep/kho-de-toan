@@ -150,7 +150,7 @@ def load_media(h):
     return (row['data'], row['ext']) if row else (None, None)
 
 def insert_question(q):
-    data = {k: q.get(k) for k in ('stem', 'options', 'items', 'solution', 'rels')}
+    data = {k: q.get(k) for k in ('stem', 'options', 'items', 'solution', 'rels', 'group', 'sub', 'lead_n', 'sol_lead_n')}
     cur = conn().execute(
         'INSERT INTO questions(folder_id, set_id, set_pos, set_part, level, qtype, answer, data, plain, fingerprint, source,'
         ' has_solution, warnings, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',

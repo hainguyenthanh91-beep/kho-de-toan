@@ -269,12 +269,12 @@ def _parse_cls_table(rows):
         return out
     for r in rows[1:]:
         get = lambda i: r[i].strip() if i is not None and i < len(r) else ''
-        m = re.search(r'\d+', get(ic))
+        m = re.search(r'(\d+)\s*[.\-]?\s*([a-h])?\b', get(ic))
         if not m:
             continue
         code = get(im).split()[0] if get(im) else ''
         lv = LEVEL_WORDS.get(_norm(get(il)).upper().strip(), '')
-        out.append((_part_no(get(ip)), int(m.group()), code, lv))
+        out.append((_part_no(get(ip)), int(m.group(1)), m.group(2) or '', code, lv))
     return out
 
 SOL_SEC_RE = re.compile(r'^\s*(LỜI\s+GIẢI|HƯỚNG\s+DẪN\s+(GIẢI|CHẤM)|ĐÁP\s+ÁN\s+(VÀ|&)\s+(LỜI\s+GIẢI|HƯỚNG\s+DẪN))', re.I)
@@ -353,6 +353,147 @@ def _parse_key_table(rows):
             if m and b.strip():
                 v = b.strip()
                 out.append((int(m.group(1)), v, 'TN' if re.fullmatch(r'[A-D]', v) else 'TLN'))
+    return out
+
+SUBMARK_RE = re.compile(r'(?:(?<=^)|(?<=\s))([a-h])\)')
+
+def _explode_runs(p):
+    for r in p.findall('w:r', NS):
+        kids = [c for c in r if ln(c) != 'rPr']
+        if len(kids) > 1 and all(ln(c) in ('t', 'tab', 'br') for c in kids):
+            parent, pos = r.getparent(), r.getparent().index(r)
+            for k, c in enumerate(kids):
+                nr = etree.Element(w('r'))
+                if r.find('w:rPr', NS) is not None:
+                    nr.append(copy.deepcopy(r.find('w:rPr', NS)))
+                nr.append(c)
+                parent.insert(pos + k, nr)
+            parent.remove(r)
+
+def _cut_submarks(p):
+    for r in p.findall('w:r', NS):
+        t = _run_text(r)
+        ms = [m for m in SUBMARK_RE.finditer(t) if m.start() > 0]
+        if not ms or r.find('w:t', NS) is None:
+            continue
+        cuts = [0] + [m.start() for m in ms] + [len(t)]
+        parent, pos = r.getparent(), r.getparent().index(r)
+        for k, (a, b) in enumerate(zip(cuts, cuts[1:])):
+            nr = copy.deepcopy(r)
+            for ch in list(nr):
+                if ln(ch) != 'rPr':
+                    nr.remove(ch)
+            tt = etree.SubElement(nr, w('t')); tt.text = t[a:b]; tt.set(XML_SPACE, 'preserve')
+            parent.insert(pos + k, nr)
+        parent.remove(r)
+
+def _tidy_item(blocks):
+    """Bỏ tab/khoảng trắng đầu-cuối ý, đổi dấu ';' cuối ý thành '.'."""
+    for b in blocks:
+        if ln(b) != 'p':
+            continue
+        ppr = b.find('w:pPr', NS)
+        if ppr is not None:
+            for x in ppr.findall('w:ind', NS) + ppr.findall('w:tabs', NS):
+                ppr.remove(x)
+    if blocks and ln(blocks[0]) == 'p':
+        for r in [c for c in blocks[0] if ln(c) != 'pPr']:
+            if ln(r) != 'r':
+                break
+            if _run_text(r).strip() or r.xpath('.//w:drawing|.//w:object|.//w:pict', namespaces=NS):
+                ts = r.findall('w:t', NS)
+                if ts and ts[0].text:
+                    ts[0].text = ts[0].text.lstrip(); ts[0].set(XML_SPACE, 'preserve')
+                break
+            blocks[0].remove(r)
+    last = next((b for b in reversed(blocks) if ln(b) == 'p' and _has_content(b)), None)
+    if last is not None:
+        for c in reversed([c for c in last if ln(c) in ('r', 'oMath', 'oMathPara')]):
+            if ln(c) != 'r':
+                break
+            t = _run_text(c)
+            if not t.strip() and not c.xpath('.//w:drawing|.//w:object|.//w:pict', namespaces=NS):
+                last.remove(c); continue
+            ts = c.findall('w:t', NS)
+            if ts and ts[-1].text:
+                ts[-1].text = re.sub(r'\s*;\s*$', '.', ts[-1].text.rstrip())
+            break
+
+def _split_subparts(blocks):
+    """Tách khối câu tự luận thành (phần chung, [ý a, ý b, ...]). Trả None nếu không có ≥ 2 ý."""
+    blocks = [copy.deepcopy(b) for b in blocks]
+    lead, items, expect = [], [], 'a'
+    for b in blocks:
+        target = items[-1] if items else lead
+        if ln(b) != 'p':
+            target.append(b)
+            continue
+        _explode_runs(b); _cut_submarks(b)
+        ppr = b.find('w:pPr', NS)
+        def shell():
+            np_ = etree.Element(w('p'))
+            if ppr is not None:
+                np_.append(copy.deepcopy(ppr))
+            return np_
+        cur, prev = shell(), ''
+        for node in [c for c in b if ln(c) != 'pPr']:
+            if ln(node) == 'r':
+                t = _run_text(node)
+                m = re.match(r'\s*([a-h])\)', t)
+                if m and m.group(1) == expect and (prev == '' or prev[-1:].isspace() or prev[-1:] in ':;.,'):
+                    if len(cur) > (1 if ppr is not None else 0):
+                        target.append(cur)
+                    items.append([]); target = items[-1]
+                    cur, prev = shell(), ''
+                    expect = chr(ord(expect) + 1)
+                    rest = t[m.end():].lstrip()
+                    if rest:
+                        cur.append(_new_run_like(node, rest)); prev = rest
+                    continue
+                prev = (prev + (t if t else ('\t' if node.find('w:tab', NS) is not None else '')))[-3:]
+            else:
+                prev = 'x'
+            cur.append(node)
+        if len(cur) > (1 if ppr is not None else 0):
+            target.append(cur)
+    if len(items) < 2:
+        return None
+    for it in items:
+        _tidy_item(it)
+    return lead, items
+
+def _detect_type(rq):
+    lab = rq['label']
+    qt = (lab.group(3) or '') if lab else ''
+    if qt == 'DS':
+        qt = 'ĐS'
+    return qt or rq.get('ptype') or classify_blocks(rq['stem'])
+
+def _expand_subparts(rq):
+    """Câu tự luận có ý a), b)… → mỗi ý một câu (phần chung chép vào từng câu)."""
+    if _detect_type(rq) != 'TL':
+        return [rq]
+    sp = _split_subparts(rq['stem'])
+    if not sp:
+        return [rq]
+    lead, items = sp
+    ssp = _split_subparts(rq['sol']) if rq['sol'] else None
+    gid = hashlib.sha1(('%s|%s|%s' % (rq.get('part'), rq.get('num'), ''.join(text_of(b) for b in rq['stem']))).encode()).hexdigest()[:12]
+    if lead and ln(lead[0]) == 'p':  # điểm '(1,5 điểm)' là của cả bài, bỏ khi tách ý
+        for t in lead[0].iter(w('t')):
+            if t.text and 'điểm' in t.text:
+                t.text = re.sub(r'\(\s*[\d,.]+\s*điểm\s*\)\s*\.?\s*', '', t.text)
+    out = []
+    for i, it in enumerate(items):
+        sub = 'abcdefgh'[i]
+        nrq = dict(rq, stem=lead + it, sub=sub, group=gid, lead_n=len(lead), sub_warn=[])
+        if ssp and len(ssp[1]) == len(items):
+            nrq['sol'] = [copy.deepcopy(x) for x in ssp[0]] + ssp[1][i]
+            nrq['sol_lead_n'] = len(ssp[0])
+        elif rq['sol']:
+            nrq['sol'] = [copy.deepcopy(x) for x in rq['sol']]
+            nrq['sub_warn'] = ['Lời giải chưa chia theo ý a), b)… — đang dùng chung cả bài']
+        out.append(nrq)
     return out
 
 def parse_docx(data: bytes, source_name=''):
@@ -474,18 +615,29 @@ def parse_docx(data: bytes, source_name=''):
             rq['sol'] = bl
             rq['sol_from_section'] = True
 
+    expanded = []
+    for rq in raw:
+        expanded += _expand_subparts(rq)
     has_cls_parts = any(p for p, *_ in cls_rows)
     n_cls = 0
-    for p, n, code, lv in cls_rows:
-        rq = q_by_part.get((p, n)) if has_cls_parts else next((r for r in raw if r['num'] == n), None)
-        if rq is not None:
-            rq['cls'] = (code, lv)
+    for p, n, sub, code, lv in cls_rows:
+        hits = [r for r in expanded if r['num'] == n and (not has_cls_parts or r['part'] == p)
+                and (not sub or r.get('sub') == sub)]
+        if sub and not hits:  # bảng ghi 1a nhưng câu không tách được: gán cho cả câu
+            hits = [r for r in expanded if r['num'] == n and (not has_cls_parts or r['part'] == p) and not r.get('cls')]
+        for r in hits:
+            if not sub and r.get('cls'):
+                continue
+            r['cls'] = (code, lv)
             n_cls += 1
     if cls_rows:
         res.classified = n_cls
     if not raw:
         res.warnings.append('Không tìm thấy câu nào bắt đầu bằng “Câu …”.')
-    for i, rq in enumerate(raw, 1):
+    n_split = sum(1 for r in expanded if r.get('sub') == 'a')
+    if n_split:
+        res.warnings.append(f'Đã tách {n_split} câu tự luận thành {sum(1 for r in expanded if r.get("sub"))} câu theo từng ý a), b)…')
+    for i, rq in enumerate(expanded, 1):
         q = _build_question(rq, i, rels, z, res)
         if q:
             q['source'] = source_name
@@ -519,7 +671,9 @@ def _build_question(rq, idx, rels, z, res):
 
     _strip_prefix(stem[0], CAU_RE)
     q = {'code': code, 'level': level, 'qtype': qtype, 'options': None, 'items': None,
-         'answer': None, 'no_in_file': idx, 'part_in_file': rq.get('part', 0), 'num_in_file': rq.get('num')}
+         'answer': None, 'no_in_file': idx, 'part_in_file': rq.get('part', 0), 'num_in_file': rq.get('num'),
+         'sub': rq.get('sub'), 'group': rq.get('group')}
+    warn += rq.get('sub_warn') or []
     key = rq.get('key')
 
     if qtype == 'TN':
@@ -604,11 +758,15 @@ def _build_question(rq, idx, rels, z, res):
         if not q['answer']:
             warn.append('Chưa có đáp án')
 
-    stem = [b for b in stem if _has_content(b)] or stem[:1]
-    while sol and not _has_content(sol[-1]):
-        sol.pop()
-    while sol and not _has_content(sol[0]):
-        sol.pop(0)
+    ln_lead, ln_sol = rq.get('lead_n', 0), rq.get('sol_lead_n', 0)
+    keep = [(i, b) for i, b in enumerate(stem) if _has_content(b)] or list(enumerate(stem[:1]))
+    if rq.get('sub'):
+        q['lead_n'] = sum(1 for i, _ in keep if i < ln_lead)
+    stem = [b for _, b in keep]
+    keep = [(i, b) for i, b in enumerate(sol) if _has_content(b) or b.xpath('.//w:tbl', namespaces=NS)]
+    if rq.get('sub') and rq.get('sol_lead_n') is not None:
+        q['sol_lead_n'] = sum(1 for i, _ in keep if i < ln_sol)
+    sol = [b for _, b in keep]
     q['stem'] = [tostr(b) for b in stem]
     q['solution'] = [tostr(b) for b in sol]
     if not sol:
@@ -1053,6 +1211,57 @@ def exam_header(b, info, code, kind='ĐỀ'):
         line += [b.tab(), b.run(f'Mã đề {code}', b=True)]
     b.add(b.para(line, tabs=[8300], before=200, after=120))
 
+def _groups(items):
+    """Gộp các ý liên tiếp của cùng một bài tự luận (cùng group) thành một câu."""
+    out = []
+    for q, perm in items:
+        g = q.get('group') if q.get('qtype') == 'TL' and q.get('sub') else None
+        if g and out and out[-1][0] == g:
+            out[-1][1].append((q, perm))
+        else:
+            out.append((g, [(q, perm)]))
+    return out
+
+def place_group(b, qs, label, solution=False):
+    """Bài tự luận nhiều ý: phần chung một lần rồi a), b)…"""
+    first = qs[0]
+    ln_ = first.get('lead_n') or 0
+    lead = [b.imp(x, first) for x in first['stem'][:ln_]]
+    for el in _first_par_with_number(b, lead, label):
+        b.add(el)
+    for i, q in enumerate(qs):
+        body = [b.imp(x, q) for x in q['stem'][(q.get('lead_n') or 0):]]
+        L = 'abcdefgh'[i] + ') '
+        if body and ln(body[0]) == 'p':
+            ppr = body[0].find('w:pPr', NS)
+            body[0].insert(1 if ppr is not None else 0, b.run(L, b=True))
+        else:
+            body.insert(0, b.para([b.run(L, b=True)]))
+        for el in body:
+            b.add(el)
+    if solution and any(q.get('solution') for q in qs):
+        b.add(b.para([b.run('Lời giải', b=True, i=True)], align='center', before=60))
+        sl = first.get('sol_lead_n')
+        shared = sl is None
+        if sl:
+            for x in first['solution'][:sl]:
+                b.add(b.imp(x, first))
+        for i, q in enumerate(qs):
+            if shared and i > 0:
+                break
+            sol = q.get('solution') or []
+            sol = sol if shared else sol[(q.get('sol_lead_n') or 0):]
+            els = [b.imp(x, q) for x in sol]
+            if not shared:
+                L = 'abcdefgh'[i] + ') '
+                if els and ln(els[0]) == 'p':
+                    ppr = els[0].find('w:pPr', NS)
+                    els[0].insert(1 if ppr is not None else 0, b.run(L, b=True))
+                else:
+                    els.insert(0, b.para([b.run(L, b=True)]))
+            for el in els:
+                b.add(el)
+
 def build_exam(media_loader, info, version, solution=False):
     """version: {'code': '101', 'parts': [(qtype, [(q, perm), ...]), ...]}"""
     b = DocBuilder(media_loader)
@@ -1061,11 +1270,16 @@ def build_exam(media_loader, info, version, solution=False):
     for qtype, items in version['parts']:
         if not items:
             continue
-        b.add(b.para([b.run(f'PHẦN {ROMAN[pi]}. ', b=True), b.run(PART_HEAD[qtype].format(n=len(items)))],
+        groups = _groups(items)
+        b.add(b.para([b.run(f'PHẦN {ROMAN[pi]}. ', b=True), b.run(PART_HEAD[qtype].format(n=len(groups)))],
                      before=160, after=60, keep_next=True))
         pi += 1
-        for k, (q, perm) in enumerate(items, 1):
-            place_question(b, q, f'Câu {k}.', perm=perm, show_key=solution, solution=solution)
+        for k, (g, qs) in enumerate(groups, 1):
+            if g and len(qs) > 1:
+                place_group(b, [q for q, _ in qs], f'Câu {k}.', solution=solution)
+            else:
+                q, perm = qs[0]
+                place_question(b, q, f'Câu {k}.', perm=perm, show_key=solution, solution=solution)
     b.add(b.para([b.run('------ HẾT ------', b=True)], align='center', before=240))
     return b.save()
 
@@ -1106,7 +1320,7 @@ def build_answer_key(media_loader, info, versions):
                 b.table(rows, [1100, 1300, 1300, 1300, 1300], bold_first_col=True)
                 b.add(b.para([], after=40))
             else:
-                b.text_par(f'{len(items)} câu tự luận — xem file lời giải chi tiết.', i=True)
+                b.text_par(f'{len(_groups(items))} câu tự luận — xem file lời giải chi tiết.', i=True)
     return b.save()
 
 def make_versions(parts, codes, shuffle_q=True, shuffle_opt=True, seed=None):
